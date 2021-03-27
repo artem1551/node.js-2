@@ -44,29 +44,29 @@ function updateBody (request, response) {
 
 function getDataFile(req, res) {
     const bodyFromFile = {}
-    console.log('start')
-    
-    fs.readdir(directory, (err, files) => {
-        console.log('readdirSync');
-        files.forEach(file => {
+    fs.readdir(directory, async (err, files) => {
+        const promiseArr = files.map((file) => {
             let filepath = directory + file;
-            fs.readFile(filepath, "utf8", (err, data) => {
-                console.log('readFileSync')
-                let name = path.parse(filepath).name;
-                if (err) {
-                    console.log(err)
-                };
-                let date = (new Date(+name)).toString();
-                let code = crypto.AES.decrypt(data, "Hello-world");
-                let decrypted = code.toString(crypto.enc.Utf8);
-                bodyFromFile[date] = decrypted;
-            });
+            return new Promise((res, rej) => {
+                fs.readFile(filepath, "utf8", (err, data) => {
+                    console.log(data)
+                    let name = path.parse(filepath).name;
+                    if (err) {
+                        console.log(err)
+                    };
+                    let date = (new Date(+name)).toString();
+                    let code = crypto.AES.decrypt(data, "Hello-world");
+                    let decrypted = code.toString(crypto.enc.Utf8);
+                    bodyFromFile[date] = JSON.parse(decrypted);
+                    res();
+                });
+            })
         });
 
+        Promise.all(promiseArr).then(() => {
+            res.send(bodyFromFile);
+        })
     });
-
-    // console.log(bodyFromFile);
-    res.send(bodyFromFile)
 };
 
 
